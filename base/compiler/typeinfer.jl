@@ -630,9 +630,9 @@ function return_type(@nospecialize(f), @nospecialize(t))
     return ccall(:jl_call_in_typeinf_world, Any, (Ptr{Ptr{Cvoid}}, Cint), Any[_return_type, f, t, world], 4)
 end
 
-_return_type(@nospecialize(f), @nospecialize(t), world) = _return_type(NativeInterpreter(), f, t, world)
+_return_type(@nospecialize(f), @nospecialize(t), world) = _return_type(NativeInterpreter(world), f, t)
 
-function _return_type(interp::AbstractInterpreter, @nospecialize(f), @nospecialize(t), world)
+function _return_type(interp::AbstractInterpreter, @nospecialize(f), @nospecialize(t))
     rt = Union{}
     if isa(f, Builtin)
         rt = builtin_tfunction(interp, f, Any[t.parameters...], nothing)
@@ -642,7 +642,7 @@ function _return_type(interp::AbstractInterpreter, @nospecialize(f), @nospeciali
             rt = widenconst(rt)
         end
     else
-        for m in _methods(f, t, -1, world)
+        for m in _methods(f, t, -1, get_world_counter(interp))
             ty = typeinf_type(interp, m[3], m[1], m[2])
             ty === nothing && return Any
             rt = tmerge(rt, ty)

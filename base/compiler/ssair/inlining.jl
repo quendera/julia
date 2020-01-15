@@ -574,11 +574,11 @@ function batch_inline!(todo::Vector{Any}, ir::IRCode, linetable::Vector{LineInfo
     return ir
 end
 
-function spec_lambda(interp::AbstractInterpreter, @nospecialize(atype), sv::OptimizationState, @nospecialize(invoke_data))
+function spec_lambda(@nospecialize(atype), sv::OptimizationState, @nospecialize(invoke_data))
     min_valid = UInt[typemin(UInt)]
     max_valid = UInt[typemax(UInt)]
     if invoke_data === nothing
-        mi = ccall(:jl_get_spec_lambda, Any, (Any, UInt, Ptr{UInt}, Ptr{UInt}), atype, get_world_counter(interp), min_valid, max_valid)
+        mi = ccall(:jl_get_spec_lambda, Any, (Any, UInt, Ptr{UInt}, Ptr{UInt}), atype, sv.world, min_valid, max_valid)
     else
         invoke_data = invoke_data::InvokeData
         atype <: invoke_data.types0 || return nothing
@@ -699,7 +699,7 @@ function analyze_method!(idx::Int, sig::Signature, @nospecialize(metharg), meths
     # See if there exists a specialization for this method signature
     mi = specialize_method(method, metharg, methsp, true) # Union{Nothing, MethodInstance}
     if !isa(mi, MethodInstance)
-        return spec_lambda(sv.interp, atype_unlimited, sv, invoke_data)
+        return spec_lambda(atype_unlimited, sv, invoke_data)
     end
 
     isconst, src = find_inferred(mi, atypes, sv, stmttyp)
@@ -708,14 +708,14 @@ function analyze_method!(idx::Int, sig::Signature, @nospecialize(metharg), meths
         return ConstantCase(src, method, Any[methsp...], metharg)
     end
     if src === nothing
-        return spec_lambda(sv.interp, atype_unlimited, sv, invoke_data)
+        return spec_lambda(atype_unlimited, sv, invoke_data)
     end
 
     src_inferred = ccall(:jl_ast_flag_inferred, Bool, (Any,), src)
     src_inlineable = ccall(:jl_ast_flag_inlineable, Bool, (Any,), src)
 
     if !(src_inferred && src_inlineable)
-        return spec_lambda(sv.interp, atype_unlimited, sv, invoke_data)
+        return spec_lambda(atype_unlimited, sv, invoke_data)
     end
 
     # At this point we're committed to performing the inlining, add the backedge
@@ -1290,7 +1290,7 @@ function find_inferred(mi::MethodInstance, @nospecialize(atypes), sv::Optimizati
         end
     end
     if haveconst || improvable_via_constant_propagation(rettype)
-        inf_result = cache_lookup(mi, atypes, sv.interp.cache) # Union{Nothing, InferenceResult}
+        inf_result = cache_lookup(mi, atypes, get_inference_cache(sv.interp)) # Union{Nothing, InferenceResult}
     else
         inf_result = nothing
     end
