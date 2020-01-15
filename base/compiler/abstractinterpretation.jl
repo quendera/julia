@@ -505,7 +505,7 @@ function precise_container_type(interp::AbstractInterpreter, @nospecialize(itft)
 end
 
 # simulate iteration protocol on container type up to fixpoint
-function abstract_iteration(interp, @nospecialize(itft), @nospecialize(itertype), vtypes::VarTable, sv::InferenceState)
+function abstract_iteration(interp::AbstractInterpreter, @nospecialize(itft), @nospecialize(itertype), vtypes::VarTable, sv::InferenceState)
     if !isdefined(Main, :Base) || !isdefined(Main.Base, :iterate) || !isconst(Main.Base, :iterate)
         return Any[Vararg{Any}]
     end
