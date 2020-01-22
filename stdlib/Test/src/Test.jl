@@ -1202,7 +1202,9 @@ function testset_forloop(args, testloop, source)
         Random.seed!(RNG.seed)
         local tmprng = copy(RNG)
         try
-            $(Expr(:for, Expr(:block, [esc(v) for v in loopvars]...), blk))
+            let
+                $(Expr(:for, Expr(:block, [esc(v) for v in loopvars]...), blk))
+            end
         finally
             # Handle `return` in test body
             if !first_iteration
