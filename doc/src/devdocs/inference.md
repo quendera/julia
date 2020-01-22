@@ -100,7 +100,7 @@ tt = Tuple{Float64, Tuple{Int,Int}}
 opt_params = Core.Compiler.OptimizationParams()
 mi = Base.method_instances(f, tt)[1]
 ci = code_typed(f, tt)[1][1]
-opt = Core.Compiler.OptimizationState(mi, params)
+opt = Core.Compiler.OptimizationState(mi, opt_params)
 # Calculate cost of each statement
 cost(stmt::Expr) = Core.Compiler.statement_cost(stmt, -1, ci, opt.sptypes, opt.slottypes, opt.params)
 cost(stmt) = 0
