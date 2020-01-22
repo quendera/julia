@@ -1422,7 +1422,7 @@ gg13183(x::X...) where {X} = (_false13183 ? gg13183(x, x) : 0)
 let linfo = get_linfo(Base.convert, Tuple{Type{Int64}, Int32}),
     world = UInt(23) # some small-numbered world that should be valid
     interp = Core.Compiler.NativeInterpreter()
-    opt = Core.Compiler.OptimizationState(linfo, OptimizationParams(interp), interp)
+    opt = Core.Compiler.OptimizationState(linfo, Core.Compiler.OptimizationParams(interp), interp)
     # make sure the state of the properties look reasonable
     @test opt.src !== linfo.def.source
     @test length(opt.src.slotflags) == linfo.def.nargs <= length(opt.src.slotnames)
