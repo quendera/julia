@@ -117,10 +117,10 @@ struct InferenceParams
             ipo_constant_propagation,
             aggressive_constant_propagation,
             max_methods,
-            tupletype_depth,
-            tuple_splat,
             union_splitting,
             apply_union_enum,
+            tupletype_depth,
+            tuple_splat,
         )
     end
 end
