@@ -2680,7 +2680,7 @@
                     (loc  (extract-line-file loc))
                     (line (if (= (car loc) 0) (julia-current-line) (car loc)))
                     (file (if (eq? (cadr loc) 'none) (julia-current-file) (cadr loc))))
-               (julia-logmsg
+               (lowering-warning
                 1000 'warn (symbol (string file line)) file line
                 (string "Assignment to `" v "` in top-level block is ambiguous "
                         "because an outer global binding by the same name already exists."

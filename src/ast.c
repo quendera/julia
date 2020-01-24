@@ -884,9 +884,10 @@ jl_value_t *jl_parse_eval_all(const char *fname,
                 }
                 // expand non-final expressions in statement position (value unused)
                 expression =
-                    fl_applyn(fl_ctx, 3,
-                              symbol_value(symbol(fl_ctx, iscons(cdr_(ast)) ? "jl-expand-to-thunk-stmt" : "jl-expand-to-thunk")),
-                              expression, symbol(fl_ctx, jl_filename), fixnum(jl_lineno));
+                    fl_applyn(fl_ctx, 4,
+                              symbol_value(symbol(fl_ctx, "jl-expand-to-thunk-warn")),
+                              expression, symbol(fl_ctx, jl_filename), fixnum(jl_lineno),
+                              iscons(cdr_(ast)) ? fl_ctx->T : fl_ctx->F);
             }
             jl_get_ptls_states()->world_age = jl_world_counter;
             form = scm_to_julia(fl_ctx, expression, inmodule);
@@ -1196,6 +1197,13 @@ JL_DLLEXPORT jl_value_t *jl_macroexpand1(jl_value_t *expr, jl_module_t *inmodule
     return expr;
 }
 
+// Lower an expression tree into Julia's intermediate-representation.
+JL_DLLEXPORT jl_value_t *jl_expand(jl_value_t *expr, jl_module_t *inmodule)
+{
+    return jl_expand_with_loc(expr, inmodule, "none", 0);
+}
+
+// Lowering, with starting program location specified
 JL_DLLEXPORT jl_value_t *jl_expand_with_loc(jl_value_t *expr, jl_module_t *inmodule,
                                             const char *file, int line)
 {
@@ -1208,10 +1216,25 @@ JL_DLLEXPORT jl_value_t *jl_expand_with_loc(jl_value_t *expr, jl_module_t *inmod
     return expr;
 }
 
-// Lower an expression tree into Julia's intermediate-representation.
-JL_DLLEXPORT jl_value_t *jl_expand(jl_value_t *expr, jl_module_t *inmodule)
+// Same as the above, but printing warnings when applicable
+JL_DLLEXPORT jl_value_t *jl_expand_with_loc_warn(jl_value_t *expr, jl_module_t *inmodule,
+                                                 const char *file, int line)
 {
-    return jl_expand_with_loc(expr, inmodule, "none", 0);
+    JL_TIMING(LOWERING);
+    JL_GC_PUSH1(&expr);
+    expr = jl_copy_ast(expr);
+    expr = jl_expand_macros(expr, inmodule, NULL, 0);
+    jl_ast_context_t *ctx = jl_ast_ctx_enter();
+    fl_context_t *fl_ctx = &ctx->fl;
+    JL_AST_PRESERVE_PUSH(ctx, old_roots, inmodule);
+    value_t arg = julia_to_scm(fl_ctx, expr);
+    value_t e = fl_applyn(fl_ctx, 4, symbol_value(symbol(fl_ctx, "jl-expand-to-thunk-warn")), arg,
+                          symbol(fl_ctx, file), fixnum(line), fl_ctx->F);
+    expr = scm_to_julia(fl_ctx, e, inmodule);
+    JL_AST_PRESERVE_POP(ctx, old_roots);
+    jl_ast_ctx_leave(ctx);
+    JL_GC_POP();
+    return expr;
 }
 
 // expand in a context where the expression value is unused
