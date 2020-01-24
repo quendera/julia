@@ -633,9 +633,15 @@ function create_worker(manager, wconfig)
             (notnothing(x.config.ident) in something(wconfig.connect_idents, []))
 
         wlist = filter(filterfunc, PGRP.workers)
+        timeout = worker_timeout()
+        waittime = 0
         while wconfig.connect_idents !== nothing &&
               length(wlist) < length(wconfig.connect_idents)
+            if waittime >= timeout
+                error("peer workers did not connect within $timeout seconds")
+            end
             sleep(1.0)
+            waittime += 1
             wlist = filter(filterfunc, PGRP.workers)
         end
 
@@ -655,7 +661,13 @@ function create_worker(manager, wconfig)
     send_msg_now(w, MsgHeader(RRID(0,0), ntfy_oid), join_message)
 
     @async manage(w.manager, w.id, w.config, :register)
+    # wait for rr_ntfy_join with timeout
+    timedout = false
+    @async (sleep(worker_timeout()); timedout = true; put!(rr_ntfy_join, 1))
     wait(rr_ntfy_join)
+    if timedout
+        error("worker did not connect within $timeout seconds")
+    end
     lock(client_refs) do
         delete!(PGRP.refs, ntfy_oid)
     end
