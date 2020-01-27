@@ -51,6 +51,21 @@ julia> 3*2/12
 operators. For instance, we would generally write `-x + 2` to reflect that first `x` gets negated,
 and then `2` is added to that result.)
 
+## Boolean Operators
+
+| Expression | Name           | Description                            |
+|:---------- |:-------------- |:-------------------------------------- |
+| `&&`       | AND            | the identity operation                 |
+| `||`       | OR             | maps values to their additive inverses |
+| `x + y`    | binary plus    | performs addition                      |
+| `x - y`    | binary minus   | performs subtraction                   |
+| `x * y`    | times          | performs multiplication                |
+| `x / y`    | divide         | performs division                      |
+| `x ÷ y`    | integer divide | x / y, truncated to an integer         |
+| `x \ y`    | inverse divide | equivalent to `y / x`                  |
+| `x ^ y`    | power          | raises `x` to the `y`th power          |
+| `x % y`    | remainder      | equivalent to `rem(x,y)`               |
+
 ## Bitwise Operators
 
 The following [bitwise operators](https://en.wikipedia.org/wiki/Bitwise_operation#Bitwise_operators)
